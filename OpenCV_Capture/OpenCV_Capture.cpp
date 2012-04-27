@@ -2,7 +2,59 @@
 //
 
 #include "stdafx.h"
+void TemlateBit(IplImage* dest,IplImage* src){
 
+}
+void TemlateBit(IplImage* dest,const char *filename,CvPoint *ptDest,CvPoint *ptSrc){
+	//IplImage *img;
+	IplImage *tpl;
+	IplImage *res;
+	CvPoint minloc,maxloc;
+	double minval,maxval;
+	int img_width,img_height;
+	int tpl_width,tpl_height;
+	int res_width,res_height;
+	if (0==dest)
+	{
+		return ;
+	}
+	tpl=cvLoadImage(filename,CV_LOAD_IMAGE_COLOR);
+	if (0==tpl)
+	{
+		return ;
+	}
+	img_width=dest->width;
+	img_height=dest->height;
+	tpl_width=tpl->width;
+	tpl_height=tpl->height;
+	res_width=img_width-tpl_width+1;
+	res_height=img_height-tpl_height+1;
+
+	res=cvCreateImage(cvSize(res_width,res_height),IPL_DEPTH_32F,1);
+	cvMatchTemplate(dest,tpl,res,CV_TM_SQDIFF);
+	cvMinMaxLoc(res,&minval,&maxval,&minloc,&maxloc,0);
+	//cvRectangle(dest,cvPoint(minloc.x/2,minloc.y/2),cvPoint(minloc.x/2+tpl_width/2,minloc.y/2+tpl_height/2),cvScalar(0,0,255,0),1,0,0);
+	//ptDest=cvPoint(minloc.x,minloc.y);
+	//ptSrc=cvPoint(minloc.x+tpl_width,minloc.y+tpl_height);
+	ptDest->x=minloc.x;
+	ptDest->y=minloc.y;
+	ptSrc->x=minloc.x+tpl_width;
+	ptSrc->y=minloc.y+tpl_height;
+    //printf("ptDest.x=%d ptDest.y=%d \n ptSrc.x=%d ptSrc.y=%d \n",ptDest.x,ptDest.y,ptSrc.x,ptSrc.y);
+	//cvNamedWindow("reference",CV_WINDOW_AUTOSIZE);
+	//cvNamedWindow("template",CV_WINDOW_AUTOSIZE);
+	//cvShowImage("reference",dest);
+	//cvShowImage("template",tpl);
+
+	//cvWaitKey(0);
+
+	//cvDestroyWindow("reference");
+	//cvDestroyWindow("template");
+	//cvReleaseImage(&dest);
+	cvReleaseImage(&tpl);
+	cvReleaseImage(&res);
+
+}
 void CopyData(char *dest, const char *src, int dataByteSize,bool isConvert, int height)
 {
 	char * p = dest;
@@ -141,21 +193,42 @@ int _tmain(int argc, _TCHAR* argv[])
 	return 0;*/
 	IplImage* screenRGB=0;
 	IplImage* screen_resize=0;
+	time_t begin,end; 
 
 	while(1)
 	{
-
+		begin=clock();
 		CopyScreenToBitmap(); //得到的图片为RGBA格式,即4通道。
 
 		if(!screen_resize)
-			screen_resize=cvCreateImage(cvSize(640,480),image_depth,image_nchannels);
+			screen_resize=cvCreateImage(cvSize(1600,900),image_depth,image_nchannels);
 		cvResize(screemImage,screen_resize,CV_INTER_LINEAR);
 
 		if(!screenRGB)
-			screenRGB=cvCreateImage(cvSize(640,480),IPL_DEPTH_8U,3);
+			screenRGB=cvCreateImage(cvSize(1600,900),IPL_DEPTH_8U,3);
 		cvCvtColor(screen_resize,screenRGB,CV_RGBA2RGB);
 
-		cvShowImage("s_laplace",screenRGB);
+		//cvShowImage("s_laplace",screenRGB);
+		CvPoint ptDest;
+		CvPoint ptSrc;
+		ptDest.x=0;ptDest.y=0;
+		ptSrc.x=0;ptSrc.y=0;
+		TemlateBit(screenRGB,"temimage.jpg",&ptDest,&ptSrc);
+		end=clock();
+		printf("ptDest.x=%d ptDest.y=%d \n ptSrc.x=%d ptSrc.y=%d \n",ptDest.x,ptDest.y,ptSrc.x,ptSrc.y);
+		printf("runtime:%1.3f \n",double(end-begin)/CLOCKS_PER_SEC);
+		HWND h=GetDesktopWindow();
+		HDC hdc=GetWindowDC(h);
+		
+		
+		//Rectangle(hdc,ptDest.x-1,ptDest.y-1,ptSrc.x+1,ptSrc.y+1);
+		MoveToEx(hdc,ptDest.x-1,ptDest.y-1,NULL);
+		LineTo(hdc,ptSrc.x+1,ptDest.y-1);
+		LineTo(hdc,ptSrc.x+1,ptSrc.y+1);
+		LineTo(hdc,ptDest.x-1,ptSrc.y+1);
+		LineTo(hdc,ptDest.x-1,ptDest.y-1);
+
+		ReleaseDC(h,hdc);
 
 		cvWaitKey(10);
 	}
