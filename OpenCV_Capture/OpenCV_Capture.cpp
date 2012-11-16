@@ -170,6 +170,34 @@ void CopyScreenToBitmap()
 	DeleteDC(hMemDC);
 	DeleteObject(hBitmap);
 }
+
+bool CmpIplImgage(IplImage* dest,IplImage* src,int* threshold){
+
+	uchar* data_dest=(uchar*)dest->imageData;
+	uchar* data_src=(uchar*)src->imageData;
+	int step=src->widthStep/sizeof(uchar);
+	int res=0;
+	int count=0;
+	for (int i=0;i<src->height;i++)
+	{
+		for (int j=0;j<src->width;j++)
+		{
+			if (data_dest[i*step+j]==data_src[i*step+j])
+			{
+				count++;
+			}
+		}
+	}
+	res=count/((src->height)*(src->width));
+	if (res>=*threshold)
+	{
+		*threshold=res;
+		return true;
+	}
+	*threshold=res;
+	return false;
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 /*
