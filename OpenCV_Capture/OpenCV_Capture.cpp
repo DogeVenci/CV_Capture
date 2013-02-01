@@ -167,8 +167,9 @@ void CopyScreenToBitmap()
 	DeleteDC(hMemDC);
 
 	SelectObject(hSrcDC,hBitmap);
-	DeleteDC(hMemDC);
 	DeleteObject(hBitmap);
+	DeleteDC(hSrcDC);
+	
 }
 
 bool CmpIplImgage(IplImage* dest,IplImage* src,int* threshold){
